@@ -6,4 +6,4 @@
 - 황신엽
 
 ## 진행 프로젝트
-- 가상의 E-commerce 기업 RFM 분석 (진행 중)
+- 가상의 E-commerce 기업 RFM 분석
