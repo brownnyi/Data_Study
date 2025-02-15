@@ -1,11 +1,19 @@
+import re
 import requests
 from bs4 import BeautifulSoup
+
+def extract_main_image(soup):
+    img_tag = soup.select_one('.itemDetailPage-main-img img')
+    if img_tag:
+        img_url = img_tag.get('src')
+        return f"https://www.crazy11.co.kr{img_url}" if img_url.startswith('/') else img_url
+    return None
 
 def extract_section_value(items, section_name):
     for item in items:
         if item.find('div', class_='mTC leftT') and item.find('div', class_='mTC leftT').text.strip() == section_name:
-            value = item.find('div', class_='mcie on')
-            return value.text.strip() if value else None
+            values = item.find_all('div', class_='mcie on')
+            return ", ".join([value.text.strip() for value in values]) if values else None
     return None
 
 def extract_score(sections, score_name):
@@ -17,8 +25,37 @@ def extract_score(sections, score_name):
                     return index
     return None
 
+def extract_original_price(soup):
+    price_span = soup.find("span", class_="itemDetailPage-price txtc-e4 txts-30")
+    if price_span:
+        original_price_span = price_span.find("span", class_="psale txts-18 txtc-a1")
+        if original_price_span:
+            return original_price_span.text.strip().replace(" 원", "").replace(",", "")
+    return None
+
+def extract_sale_price(soup):
+    price_span = soup.find("span", class_="itemDetailPage-price txtc-e4 txts-30")
+    if price_span:
+        sale_price_text = price_span.contents[0].strip()
+        return sale_price_text.replace(" 원", "").replace(",", "")
+    return None
+
+def extract_weight(soup):
+    weight_sections = soup.find_all("span", class_="itembasic-bg")
+    for section in weight_sections:
+        title = section.find("span", class_="itembasic-tit")
+        weight_text = section.find("span", class_="itembasic-txt")
+        if title and weight_text and title.text.strip() == "무게":
+            match = re.search(r'(\d+\.?\d*)g', weight_text.text.strip())
+            if match:
+                return match.group(1) + "g"
+    return None
+
 def crazy(url):
-    response = requests.get(url)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
+    response = requests.get(url, headers=headers)
     response.encoding = 'cp949'
     soup = BeautifulSoup(response.text, "html.parser")
 
@@ -33,12 +70,21 @@ def crazy(url):
     len_score = extract_score(sections, '길이')
     foot_score = extract_score(sections, '발볼')
 
+    original_price = extract_original_price(soup)
+    sale_price = extract_sale_price(soup)
+    weight = extract_weight(soup)
+    main_image = extract_main_image(soup)
+
     result = {
         'title': title,
+        'original_price': original_price,
+        'sale_price': sale_price,
         'upper': upper,
         'ground': ground,
         'len_score': len_score,
-        'foot_score': foot_score
+        'foot_score': foot_score,
+        'weight': weight,
+        'main_image': main_image
     }
 
     return result
