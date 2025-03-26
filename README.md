@@ -7,3 +7,4 @@
 
 ## 진행 프로젝트
 - 가상의 E-commerce 기업 RFM 분석
+- Soccerly 프로젝트 데이터 수집 중
