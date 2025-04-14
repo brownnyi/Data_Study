@@ -17,3 +17,14 @@ Median AS (
 SELECT 
     ROUND(AVG(LAT_N), 4) AS median_lat_n
 FROM Median;
+
+-----------------------------------------
+WITH cte AS(
+    SELECT lat_n
+            , ROW_NUMBER() OVER(ORDER BY lat_n) AS row_n
+            , COUNT(*) OVER() AS total_cnt
+    FROM station
+)
+SELECT ROUND(AVG(lat_n), 4)
+FROM cte
+WHERE row_n IN (CEIL((total_cnt + 1) / 2), FLOOR((total_cnt + 1) / 2))
